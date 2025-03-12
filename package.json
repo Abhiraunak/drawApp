@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "drawApp",
   "private": true,
   "scripts": {
     "build": "turbo run build",
