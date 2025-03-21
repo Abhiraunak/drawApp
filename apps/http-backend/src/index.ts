@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { roomSchema, signInSchema, userSchema } from "@repo/common/types";
-import { JWT_SECRET }  from "@repo/backend-common/config";
+import { JWT_SECRET } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
 import { middleware } from "./middlewate";
 
@@ -17,7 +17,7 @@ app.post('/signup', async (req, res) => {
         return;
     }
 
-    try{
+    try {
 
         const user = await prismaClient.user.create({
             data: {
@@ -28,20 +28,20 @@ app.post('/signup', async (req, res) => {
         })
 
         res.json({
-            userId : user.id
+            userId: user.id
         })
 
-    } catch(e){
+    } catch (e) {
         res.status(411).json({
-            message : "User already exits with this username"
+            message: "User already exits with this username"
         })
     }
 })
 
-app.post('/signin', async(req, res) => {
+app.post('/signin', async (req, res) => {
 
     const parseData = signInSchema.safeParse(req.body);
-    if(!parseData.success){
+    if (!parseData.success) {
         res.json({
             message: "Incorrect Inputs"
         })
@@ -49,13 +49,13 @@ app.post('/signin', async(req, res) => {
     }
 
     const user = await prismaClient.user.findFirst({
-        where : {
+        where: {
             email: parseData.data.username,
             password: parseData.data.password
         }
     })
 
-    if(!user){
+    if (!user) {
         res.status(403).json({
             message: "Not authorized"
         })
@@ -63,7 +63,7 @@ app.post('/signin', async(req, res) => {
     }
 
     const token = jwt.sign({
-        userId : user?.id
+        userId: user?.id
     }, JWT_SECRET)
 
     res.json({
@@ -71,9 +71,9 @@ app.post('/signin', async(req, res) => {
     })
 })
 
-app.post('/room', middleware, async(req, res) => {
+app.post('/room', middleware, async (req, res) => {
     const parseData = roomSchema.safeParse(req.body);
-    if(!parseData.success){
+    if (!parseData.success) {
         res.json({
             message: "Incorrect Inputs"
         })
@@ -82,13 +82,23 @@ app.post('/room', middleware, async(req, res) => {
 
     // @ts-ignore
     const userId = req.userId;
-    
-    await prismaClient.room.create({
-        data:{
-            slug: parseData.data.name,
-            adminId: userId
-        }
-    })
+
+    try {
+        const room = await prismaClient.room.create({
+            data: {
+                slug: parseData.data.name,
+                adminId: userId
+            }
+        })
+
+        res.json({
+            roomId: room.id
+        })
+    } catch(e){
+        res.status(411).json({
+            message : "Room already exist with this name"
+        })
+    }
 
 })
 app.listen(3000);
